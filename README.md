@@ -11,8 +11,11 @@ Requirements
 * Memcached
 * py-memcached
 
-Installation
-------------
+Installation of Nagios plugin
+-----------------------------
+
+**Installation and general configuration of Nagios and Memcached is out of scope of this document. This only covers necessary configuration to introduce SNMP location.**
+
 Put the Nagios plugin in the directory configured in resource.cfg, for example:
 <pre>
 # Sets $USER1$ to be the path to the plugins
@@ -38,7 +41,7 @@ define service{
 }
 </pre>
 
-__Make sure the user Nagios runs as can execute the script properly__
+__Make sure the user Nagios runs as can execute the script properly.__ If you access memcached through a UNIX socket, you might have to make memcached run as the nagios user so the socket file is accessible by Nagios.
 <pre>
 nagios# su -m nagios -c '/usr/local/libexec/nagios/check_snmp_location.py -H switch -C public'
 </pre>
@@ -51,4 +54,24 @@ unzip netsnmp_python-*.egg
 mv netsnmp_python-*.egg ./egg-archive/
 unzip python_memcached-*.egg
 mv python_memcached-*.egg ./egg-archive/
+</pre>
+
+Notification integration
+------------------------
+
+We'd like to do something with the gathered information which is stored in memcached as a key:value pair with Nagios-defined host address as key and SNMP location as value.
+
+Put the memcached_get.py script somewhere good, and modify Nagios notify command definitions in commands.cfg (change to fit your environment):
+<pre>
+# 'notify-host-by-email' command definition
+define command{
+        command_name    notify-host-by-email
+        command_line    /usr/bin/printf "** Nagios System Surveillence **\n\nNotification Type: %b\nHost: %b\nState: %b\nAddress: %b\nInfo: %b\n\nDate/Time: %b\nLocation: %b" "$NOTIFICATIONTYPE$" "$HOSTNAME$" "$HOSTSTATE$" "$HOSTADDRESS$" "$HOSTOUTPUT$" "$LONGDATETIME$" "`/usr/local/bin/memcached_get.py $HOSTADDRESS$`" | /usr/bin/mail -s "Host $HOSTSTATE$ alert for $HOSTNAME$!" $CONTACTEMAIL$
+}
+
+# 'notify-by-email' command definition
+define command{
+        command_name    notify-by-email
+        command_line    /usr/bin/printf "** Nagios System Surveillence **\n\nNotification Type: %b\n\nService: %b\nHost: %b\nAddress: %b\nState: %b\n\nDate/Time: %b\n\nAdditional Info:\n\n%b\nLocation: %b" "$NOTIFICATIONTYPE$" "$SERVICEDESC$" "$HOSTALIAS$" "$HOSTADDRESS$" "$SERVICESTATE$" "$LONGDATETIME$" "$SERVICEOUTPUT$" "`/usr/local/bin/memcached_get.py $HOSTADDRESS$`" | /usr/bin/mail -s "$NOTIFICATIONTYPE$ alert - $HOSTALIAS$/$SERVICEDESC$ is $SERVICESTATE$" $CONTACTEMAIL$
+}
 </pre>
