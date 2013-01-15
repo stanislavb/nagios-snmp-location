@@ -46,14 +46,13 @@ __Make sure the user Nagios runs as can execute the script properly.__ If you ac
 nagios# su -m nagios -c '/usr/local/libexec/nagios/check_snmp_location.py -H switch -C public'
 </pre>
 
-If it looks like a permission problem, chmod/chown the file so Nagios can run it. If it complains about not being able to extract python eggs, it might be because the user cannot create a '.python-eggs' directory in its home folder. You can either fix home folder permissions or extract the relevant eggs manually. Note: directory below is where python lays its eggs in FreeBSD:
+If it looks like a permission problem, chmod/chown the file so Nagios can run it. If it complains about not being able to extract python eggs, it might be because the user cannot create a '.python-eggs' directory in its home folder. You can either fix home folder permissions or extract the relevant eggs manually. I recommend moving the extracted contents to the location of the script, so subsequent compiles/installs don't generate a new .egg file and break functionality. Note: directory below is where python lays its eggs in FreeBSD:
 <pre>
 cd /usr/local/lib/python2.7/site-packages
-mkdir egg-archive
 unzip netsnmp_python-*.egg
-mv netsnmp_python-*.egg ./egg-archive/
 unzip python_memcached-*.egg
-mv python_memcached-*.egg ./egg-archive/
+cp -r /usr/local/lib/python2.7/site-packages/netsnmp /usr/local/libexec/nagios/
+cp /usr/local/lib/python2.7/site-packages/memcache.py /usr/local/libexec/nagios/
 </pre>
 
 Notification integration
