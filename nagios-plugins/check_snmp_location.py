@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 # Authors: Stanislav Blokhin
 
 # This script checks the standard SNMP location oid
